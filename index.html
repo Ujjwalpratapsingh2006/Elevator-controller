@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elevator Controller VLSI - Real Verilog VCD Waveform Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.75);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(56, 189, 248, 0.25);
+            
+            --accent-cyan: #38bdf8;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --accent-rose: #f43f5e;
+            --accent-purple: #a855f7;
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-dim: #6b7280;
+            
+            --led-off: #1e293b;
+            --led-red-glow: 0 0 16px rgba(244, 63, 94, 0.8), 0 0 4px #f43f5e;
+            --led-green-glow: 0 0 16px rgba(16, 185, 129, 0.8), 0 0 4px #10b981;
+            --led-amber-glow: 0 0 16px rgba(245, 158, 11, 0.8), 0 0 4px #f59e0b;
+            --led-cyan-glow: 0 0 16px rgba(56, 189, 248, 0.8), 0 0 4px #38bdf8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.8) 0px, transparent 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* HEADER */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 22px;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-chip {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-emerald);
+            text-transform: uppercase;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .badge-chip::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-emerald);
+            box-shadow: 0 0 8px var(--accent-emerald);
+        }
+
+        .header-title h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-upload-btn {
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+            transition: all 0.2s;
+        }
+        .file-upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.55);
+        }
+
+        /* PLAYBACK CONTROL DOCK */
+        .playback-dock {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 14px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .dock-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .playback-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .dock-btn {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .dock-btn:hover {
+            background: #334155;
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+        .dock-btn.active {
+            background: var(--accent-cyan);
+            color: black;
+            font-weight: 700;
+        }
+
+        .time-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .speed-selector {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .speed-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-dim);
+            font-weight: 700;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+        .speed-btn.active, .speed-btn:hover {
+            color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.15);
+        }
+
+        /* TIMELINE SCRUBBER */
+        .timeline-container {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .vcd-slider {
+            flex: 1;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e293b;
+            border-radius: 9999px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+        }
+        .vcd-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 10px var(--accent-cyan);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .vcd-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* KEY EVENT JUMP BUTTONS */
+        .jump-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+        .jump-chip {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-glass);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .jump-chip:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        /* MAIN GRID LAYOUT */
+        .main-container {
+            display: grid;
+            grid-template-columns: 340px 1fr 380px;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 10px;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* LEFT PANEL: ELEVATOR SHAFT */
+        .shaft-container {
+            flex: 1;
+            min-height: 400px;
+            background: #050810;
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .floor-row {
+            flex: 1;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            position: relative;
+            z-index: 1;
+        }
+        .floor-row:last-child {
+            border-bottom: none;
+        }
+
+        .floor-num {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .floor-sub {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .hall-call-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .hall-btn {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+        .hall-btn.active {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        /* CABIN */
+        .elevator-cabin {
+            position: absolute;
+            left: 75px;
+            right: 75px;
+            height: 25%;
+            bottom: 0%;
+            background: linear-gradient(180deg, #1e293b, #0f172a);
+            border: 2px solid var(--accent-cyan);
+            border-radius: 8px;
+            transition: bottom 0.2s ease-out;
+            z-index: 5;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .cabin-interior {
+            width: 100%;
+            height: 100%;
+            background: #0f172a;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .passenger-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 0 6px rgba(255,255,255,0.4));
+        }
+
+        .cabin-door {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background: linear-gradient(90deg, #334155, #1e293b);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+        }
+
+        .cabin-door.left {
+            left: 0;
+            transform: translateX(0%);
+        }
+        .cabin-door.right {
+            right: 0;
+            transform: translateX(0%);
+        }
+
+        .doors-open .cabin-door.left {
+            transform: translateX(-92%);
+        }
+        .doors-open .cabin-door.right {
+            transform: translateX(92%);
+        }
+
+        /* CENTER PANEL: VERILOG STIMULUS & SENSORS (VCD-DRIVEN) */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .cabin-keypad {
+            background: #0d131f;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .keypad-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .key-btn {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .key-btn.active {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--accent-amber);
+            color: var(--accent-amber);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+        }
+
+        .sensor-box {
+            background: #0d131f;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .switch-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .vcd-signal-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 8px;
+        }
+        .vcd-signal-card.active {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: var(--accent-rose);
+        }
+
+        .hazard-banner {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid var(--accent-rose);
+            border-radius: 8px;
+            padding: 10px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: pulse-hazard 0.8s infinite alternate;
+        }
+        @keyframes pulse-hazard {
+            0% { box-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
+            100% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.8); }
+        }
+
+        /* RIGHT PANEL: HARDWARE PERIPHERALS */
+        .hardware-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* 7-SEGMENT DISPLAY */
+        .seven-seg-card {
+            background: #050810;
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .seg-wrapper {
+            position: relative;
+            width: 80px;
+            height: 130px;
+        }
+
+        .seg {
+            position: absolute;
+            background: var(--led-off);
+            border-radius: 3px;
+            transition: background 0.1s, box-shadow 0.1s;
+        }
+        .seg.on {
+            background: var(--accent-amber);
+            box-shadow: var(--led-amber-glow);
+        }
+
+        .seg-a { top: 6px; left: 14px; width: 52px; height: 9px; }
+        .seg-b { top: 13px; right: 8px; width: 9px; height: 46px; }
+        .seg-c { bottom: 13px; right: 8px; width: 9px; height: 46px; }
+        .seg-d { bottom: 6px; left: 14px; width: 52px; height: 9px; }
+        .seg-e { bottom: 13px; left: 8px; width: 9px; height: 46px; }
+        .seg-f { top: 13px; left: 8px; width: 9px; height: 46px; }
+        .seg-g { top: 60px; left: 14px; width: 52px; height: 9px; }
+        .seg-dp { bottom: 6px; right: -4px; width: 9px; height: 9px; border-radius: 50%; }
+
+        .seg-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .meta-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .meta-val {
+            font-weight: 700;
+            color: var(--accent-amber);
+        }
+
+        /* STEPPER MOTOR DRIVE */
+        .motor-card {
+            background: #050810;
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .motor-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+        }
+
+        .motor-housing {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid #1e293b;
+            background: #0a0f1d;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .motor-rotor {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+            position: relative;
+            transform: rotate(0deg);
+            transition: transform 0.08s linear;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+        }
+        .motor-rotor::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 17px;
+            width: 4px;
+            height: 10px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .coil {
+            position: absolute;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #475569;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            background: #111827;
+            transition: all 0.1s;
+        }
+        .coil.on {
+            background: var(--accent-cyan);
+            color: black;
+            box-shadow: var(--led-cyan-glow);
+        }
+        .coil-0 { top: -8px; left: 32px; }  /* Phase A - q[3] */
+        .coil-1 { top: 32px; right: -8px; } /* Phase B - q[2] */
+        .coil-2 { bottom: -8px; left: 32px; }/* Phase C - q[1] */
+        .coil-3 { top: 32px; left: -8px; }  /* Phase D - q[0] */
+
+        .coils-bar {
+            display: flex;
+            gap: 6px;
+        }
+        .coil-bit {
+            flex: 1;
+            padding: 5px 3px;
+            background: #1e293b;
+            border-radius: 6px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            transition: all 0.1s;
+        }
+        .coil-bit.on {
+            background: rgba(56, 189, 248, 0.25);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        /* LED STATUS BAR */
+        .led-status-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .led-indicator {
+            background: #0d131f;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .led-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--led-off);
+            transition: all 0.15s;
+        }
+        .led-indicator.alert .led-dot.on {
+            background: var(--accent-rose);
+            box-shadow: var(--led-red-glow);
+        }
+        .led-indicator.door .led-dot.on {
+            background: var(--accent-emerald);
+            box-shadow: var(--led-green-glow);
+        }
+
+        /* FOOTER BUS TABLE */
+        footer {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow-x: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .bus-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .bus-label {
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+        }
+        .bus-val {
+            font-size: 0.88rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        /* DRAG & DROP OVERLAY */
+        #dropOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 14, 23, 0.9);
+            border: 3px dashed var(--accent-cyan);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 9999;
+        }
+        #dropOverlay.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- DRAG AND DROP OVERLAY -->
+    <div id="dropOverlay">
+        <span style="font-size: 3rem;">📁</span>
+        <h2 style="font-size: 1.5rem; color: var(--accent-cyan);">Drop your `dump.vcd` file here</h2>
+        <p style="color: var(--text-muted);">The simulator will immediately re-sync to your Verilog simulation trace.</p>
+    </div>
+
+    <!-- TOP HEADER -->
+    <header>
+        <div class="header-title">
+            <span class="badge-chip" id="vcdBadge">Real Verilog VCD: ACTIVE</span>
+            <h1>Elevator Controller - Real Verilog Waveform Player</h1>
+        </div>
+        <div class="header-actions">
+            <input type="file" id="vcdFileInput" accept=".vcd" style="display:none">
+            <button class="file-upload-btn" onclick="document.getElementById('vcdFileInput').click()">
+                📁 Load `dump.vcd`
+            </button>
+        </div>
+    </header>
+
+    <!-- PLAYBACK CONTROL DOCK -->
+    <div class="playback-dock">
+        <div class="dock-top-row">
+            <div class="playback-controls">
+                <button class="dock-btn" id="btnPrevKey" title="Previous State Change">⏮</button>
+                <button class="dock-btn active" id="btnPlayPause" title="Play/Pause">⏸</button>
+                <button class="dock-btn" id="btnNextKey" title="Next State Change">⏭</button>
+                <button class="dock-btn" id="btnRestart" title="Restart to Time 0">↺</button>
+            </div>
+
+            <div class="time-display">
+                <span style="color:var(--text-muted); font-size:0.75rem;">SIM TIME:</span>
+                <span id="txtSimTime">0 ms</span>
+                <span style="color:var(--text-dim); font-size:0.75rem;">/ <span id="txtMaxTime">55,000 ms</span></span>
+            </div>
+
+            <div class="speed-selector">
+                <span>SPEED:</span>
+                <button class="speed-btn" data-speed="0.2">0.2x</button>
+                <button class="speed-btn" data-speed="1">1x</button>
+                <button class="speed-btn active" data-speed="5">5x</button>
+                <button class="speed-btn" data-speed="20">20x</button>
+                <button class="speed-btn" data-speed="100">100x</button>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <input type="range" class="vcd-slider" id="vcdScrubber" min="0" max="55000" value="0">
+        </div>
+
+        <!-- JUMP TO KEY EVENTS IN REAL VERILOG SIMULATION -->
+        <div class="jump-chips">
+            <span style="font-size:0.72rem; color:var(--text-dim); align-self:center;">Jump to:</span>
+            <button class="jump-chip" data-t="0">0 ms: Reset @ Floor 0</button>
+            <button class="jump-chip" data-t="600">600 ms: Move UP Call (Flr 2)</button>
+            <button class="jump-chip" data-t="4800">4,800 ms: Motor Starts Stepping</button>
+            <button class="jump-chip" data-t="8000">8,000 ms: Passes Floor 1 (0x06)</button>
+            <button class="jump-chip" data-t="11000">11,000 ms: Passes Floor 2 (0x5B)</button>
+            <button class="jump-chip" data-t="14000">14,000 ms: Arrives Floor 3 (0x4F) & Doors Open</button>
+            <button class="jump-chip" data-t="24000">24,000 ms: OVERWEIGHT ALERT TRIGGERED</button>
+            <button class="jump-chip" data-t="28000">28,000 ms: Overweight Cleared</button>
+        </div>
+    </div>
+
+    <!-- MAIN 3-COLUMN WORKSPACE -->
+    <div class="main-container">
+
+        <!-- 1. ELEVATOR SHAFT & BUILDING -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🏢 Building Shaft</span>
+                <span class="badge-chip" id="lblScanDir" style="color: var(--accent-amber); border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.1);">VCD SYNCED</span>
+            </div>
+
+            <div class="shaft-container">
+                <div class="floor-row" data-floor="3">
+                    <div class="floor-indicator">
+                        <span class="floor-num">Floor 3</span>
+                        <span class="floor-sub">Penthouse</span>
+                    </div>
+                    <div class="hall-call-group">
+                        <div class="hall-btn" id="callDown3">▼</div>
+                    </div>
+                </div>
+
+                <div class="floor-row" data-floor="2">
+                    <div class="floor-indicator">
+                        <span class="floor-num">Floor 2</span>
+                        <span class="floor-sub">Offices</span>
+                    </div>
+                    <div class="hall-call-group">
+                        <div class="hall-btn" id="callUp2">▲</div>
+                        <div class="hall-btn" id="callDown2">▼</div>
+                    </div>
+                </div>
+
+                <div class="floor-row" data-floor="1">
+                    <div class="floor-indicator">
+                        <span class="floor-num">Floor 1</span>
+                        <span class="floor-sub">Mezzanine</span>
+                    </div>
+                    <div class="hall-call-group">
+                        <div class="hall-btn" id="callUp1">▲</div>
+                        <div class="hall-btn" id="callDown1">▼</div>
+                    </div>
+                </div>
+
+                <div class="floor-row" data-floor="0">
+                    <div class="floor-indicator">
+                        <span class="floor-num">Floor 0</span>
+                        <span class="floor-sub">Lobby</span>
+                    </div>
+                    <div class="hall-call-group">
+                        <div class="hall-btn" id="callUp0">▲</div>
+                    </div>
+                </div>
+
+                <!-- MOVING CABIN -->
+                <div class="elevator-cabin" id="cabin">
+                    <div class="cabin-interior">
+                        <span class="passenger-icon">🧑‍💼</span>
+                    </div>
+                    <div class="cabin-door left"></div>
+                    <div class="cabin-door right"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CABIN PANEL & SENSORS -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">🎛️ Verilog Inputs from VCD</span>
+                <span style="font-size: 0.75rem; color: var(--accent-cyan);">Real Simulation Stimulus</span>
+            </div>
+
+            <div class="controls-grid">
+                <!-- Cabin Floor Request Buttons (Active when VCD pulses high) -->
+                <div class="cabin-keypad">
+                    <span class="switch-label">Cabin Requests (`req_floor[3:0]`)</span>
+                    <div class="keypad-grid">
+                        <div class="key-btn" id="reqBtn3">3</div>
+                        <div class="key-btn" id="reqBtn2">2</div>
+                        <div class="key-btn" id="reqBtn1">1</div>
+                        <div class="key-btn" id="reqBtn0">0</div>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-dim); text-align: center;">
+                        Buttons highlight automatically when pressed in Verilog testbench.
+                    </div>
+                </div>
+
+                <!-- Overweight Sensor & Safety Interrupt -->
+                <div class="sensor-box">
+                    <span class="switch-label">Overload Sensor (`over_weight`)</span>
+                    <div class="vcd-signal-card" id="cardOverweight">
+                        <div>
+                            <div style="font-weight: 700; font-size: 0.85rem;">Load &gt; 750 kg</div>
+                            <div style="font-size: 0.7rem; color: var(--text-dim);" id="lblOverweightVal">Input Wire: 0 (Normal)</div>
+                        </div>
+                        <div style="font-family:'JetBrains Mono'; font-weight:700; color:var(--text-muted);" id="valOverweightBit">0</div>
+                    </div>
+
+                    <!-- HAZARD ALERT BANNER -->
+                    <div class="hazard-banner" id="hazardBanner">
+                        <span style="font-size: 1.3rem;">⚠️</span>
+                        <div>
+                            <div style="font-size:0.75rem; font-weight:700; color:var(--accent-rose);">OVERWEIGHT INTERRUPT!</div>
+                            <div style="font-size: 0.68rem; color: #fca5a5;">Motor Halted | Doors Forced Open</div>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.72rem; color: var(--text-dim); line-height: 1.3;">
+                        Parsed directly from the simulation's `over_weight` input wire.
+                    </div>
+                </div>
+            </div>
+
+            <!-- HARDWARE LOGIC STATE READOUT -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-glass); border-radius: 10px; padding: 12px;">
+                <span class="panel-title" style="margin-bottom: 8px;">Hardware State from VCD</span>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 0.82rem;">
+                    <div><span style="color:var(--text-dim)">Current Floor:</span> <b id="valCurFloor">0</b></div>
+                    <div><span style="color:var(--text-dim)">Direction Wire:</span> <b id="valMotionState">STOP (11)</b></div>
+                    <div><span style="color:var(--text-dim)">Door State:</span> <b id="valDoorStateTxt">CLOSED (0)</b></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. VLSI HARDWARE PERIPHERALS -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">⚡ FPGA Peripherals (From VCD)</span>
+                <span class="badge-chip">Real Outputs</span>
+            </div>
+
+            <div class="hardware-grid">
+                <!-- 7-SEGMENT DISPLAY -->
+                <div class="seven-seg-card">
+                    <div class="seg-wrapper">
+                        <div class="seg seg-a" id="segA"></div>
+                        <div class="seg seg-b" id="segB"></div>
+                        <div class="seg seg-c" id="segC"></div>
+                        <div class="seg seg-d" id="segD"></div>
+                        <div class="seg seg-e" id="segE"></div>
+                        <div class="seg seg-f" id="segF"></div>
+                        <div class="seg seg-g" id="segG"></div>
+                        <div class="seg seg-dp" id="segDP"></div>
+                    </div>
+                    <div class="seg-meta">
+                        <span class="meta-tag">Port: <span style="color:white">disp[7:0]</span></span>
+                        <span class="meta-tag">Hex: <span class="meta-val" id="hexDisp">0x7F</span></span>
+                        <span class="meta-tag">Binary: <span class="meta-val" id="binDisp" style="font-size:0.75rem">01111111</span></span>
+                        <span class="meta-tag">Floor: <span class="meta-val" id="numDisp" style="font-size:1.1rem">0</span></span>
+                    </div>
+                </div>
+
+                <!-- STEPPER MOTOR DRIVER -->
+                <div class="motor-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span class="panel-title" style="font-size: 0.78rem;">4-Phase Stepper Motor (`q[3:0]`)</span>
+                        <span id="motorAction" style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;">HOLDING</span>
+                    </div>
+                    <div class="motor-display">
+                        <div class="motor-housing">
+                            <div class="coil coil-0" id="coilA">A</div>
+                            <div class="coil coil-1" id="coilB">B</div>
+                            <div class="coil coil-2" id="coilC">C</div>
+                            <div class="coil coil-3" id="coilD">D</div>
+                            <div class="motor-rotor" id="rotor"></div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:4px; font-family:'JetBrains Mono', monospace; font-size:0.75rem;">
+                            <div>Phase Hex: <b id="motorHex" style="color:var(--accent-cyan)">0x3</b></div>
+                            <div>Binary: <b id="motorBin" style="color:white">0011</b></div>
+                            <div style="font-size:0.68rem; color:var(--text-dim);">Driven by real coil output `q`</div>
+                        </div>
+                    </div>
+                    <div class="coils-bar">
+                        <div class="coil-bit" id="bit3">q[3]: A</div>
+                        <div class="coil-bit" id="bit2">q[2]: B</div>
+                        <div class="coil-bit" id="bit1">q[1]: C</div>
+                        <div class="coil-bit" id="bit0">q[0]: D</div>
+                    </div>
+                </div>
+
+                <!-- STATUS LEDS -->
+                <div class="led-status-card">
+                    <div class="led-indicator door" id="ledDoorBox">
+                        <div class="led-dot" id="ledDoor"></div>
+                        <div class="led-info">
+                            <span class="led-name">DOOR_STATE</span>
+                            <span class="led-state" id="txtDoorState">CLOSED (0)</span>
+                        </div>
+                    </div>
+                    <div class="led-indicator alert" id="ledAlertBox">
+                        <div class="led-dot" id="ledAlert"></div>
+                        <div class="led-info">
+                            <span class="led-name">OVER_WEIGHT_ALERT</span>
+                            <span class="led-state" id="txtAlertState">OFF (0)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM HARDWARE SIGNAL BUS MONITOR -->
+    <footer>
+        <div class="bus-item">
+            <span class="bus-label">CURRENT_FLOOR</span>
+            <span class="bus-val" id="busCurFloor">2'b00</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">DIRECTION</span>
+            <span class="bus-val" id="busDir">STOP (11)</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">DOOR_STATE</span>
+            <span class="bus-val" id="busDoor">0</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">OVER_WEIGHT</span>
+            <span class="bus-val" id="busOverweight">0</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">OVER_WEIGHT_ALERT</span>
+            <span class="bus-val" id="busAlert">0</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">DISP[7:0]</span>
+            <span class="bus-val" id="busDisp">01111111 (0x7F)</span>
+        </div>
+        <div class="bus-item">
+            <span class="bus-label">Q[3:0] (MOTOR)</span>
+            <span class="bus-val" id="busQ">0011 (0x3)</span>
+        </div>
+    </footer>
+
+    <!-- VCD PARSER & TIMELINE PLAYER ENGINE -->
+    <script>
+        // ========================================================
+        // 1. EMBEDDED REAL VERILOG VCD TRACE FROM ICARUS VERILOG
+        // ========================================================
+        // This trace is generated directly by elevator_controller_tb.v
+        const DEFAULT_VCD_DATA = `$date
+    Sun Oct 25 2026
+$end
+$version
+    Icarus Verilog
+$end
+$timescale
+    1ms
+$end
+$scope module elevator_cont_Machine_tb $end
+$var wire 1 ! clk $end
+$var wire 1 " door_state $end
+$var wire 1 # over_weight_alert $end
+$var wire 8 $ disp [7:0] $end
+$var wire 4 % q [3:0] $end
+$var reg 4 & req_floor [3:0] $end
+$var reg 4 ' move_up_call [3:0] $end
+$var reg 4 ( move_down_call [3:0] $end
+$var reg 1 ) over_weight $end
+$var reg 1 * open_door $end
+$var reg 1 + close_door $end
+$scope module uut $end
+$var wire 2 , wire_current_floor [1:0] $end
+$var wire 2 - wire_direction [1:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+0!
+0"
+0#
+b01111111 $
+b0011 %
+b0000 &
+b0000 '
+b0000 (
+0)
+0*
+0+
+b00 ,
+b11 -
+$end
+#300
+1"
+#500
+b1000 (
+#600
+b0100 '
+#1000
+b0010 &
+#1050
+b0001 &
+#3000
+0"
+#4800
+b01 -
+b1001 %
+#4900
+b1100 %
+#5000
+b0110 %
+#5100
+b0011 %
+#5200
+b1001 %
+#5300
+b1100 %
+#5400
+b0110 %
+#5500
+b0011 %
+#5600
+b1001 %
+#5700
+b1100 %
+#5800
+b0110 %
+#5900
+b0011 %
+#6000
+b1001 %
+#6100
+b1100 %
+#6200
+b0110 %
+#6300
+b0011 %
+#6400
+b1001 %
+#6500
+b1100 %
+#6600
+b0110 %
+#6700
+b0011 %
+#6800
+b1001 %
+#6900
+b1100 %
+#7000
+b0110 %
+#7100
+b0011 %
+#7200
+b1001 %
+#7300
+b1100 %
+#7400
+b0110 %
+#7500
+b0011 %
+#7600
+b1001 %
+#7700
+b1100 %
+#7800
+b0110 %
+#7900
+b0011 %
+#8000
+b00000110 $
+b01 ,
+b1001 %
+#8100
+b1100 %
+#8200
+b0110 %
+#8300
+b0011 %
+#8400
+b1001 %
+#8500
+b1100 %
+#8600
+b0110 %
+#8700
+b0011 %
+#8800
+b1001 %
+#8900
+b1100 %
+#9000
+b0110 %
+#9100
+b0011 %
+#9200
+b1001 %
+#9300
+b1100 %
+#9400
+b0110 %
+#9500
+b0011 %
+#9600
+b1001 %
+#9700
+b1100 %
+#9800
+b0010 &
+b0110 %
+#9900
+b0011 %
+#10000
+b1001 %
+#10100
+b1100 %
+#10200
+b0001 &
+b0110 %
+#10300
+b0011 %
+#10400
+b1001 %
+#10500
+b1100 %
+#10600
+b0110 %
+#10700
+b0011 %
+#10800
+b1001 %
+#10900
+b1100 %
+#11000
+b01011011 $
+b10 ,
+b0110 %
+#11100
+b0011 %
+#11200
+b1001 %
+#11300
+b1100 %
+#11400
+b0110 %
+#11500
+b0011 %
+#11600
+b1001 %
+#11700
+b1100 %
+#11800
+b0110 %
+#11900
+b0011 %
+#12000
+b1001 %
+#12100
+b1100 %
+#12200
+b0110 %
+#12300
+b0011 %
+#12400
+b1001 %
+#12500
+b1100 %
+#12600
+b0110 %
+#12700
+b0011 %
+#12800
+b1001 %
+#12900
+b1100 %
+#13000
+b0110 %
+#13100
+b0011 %
+#13200
+b1001 %
+#13300
+b1100 %
+#13400
+b0110 %
+#13500
+b0011 %
+#13600
+b1001 %
+#13700
+b1100 %
+#13800
+b0110 %
+#13900
+b0011 %
+#14000
+b01001111 $
+b11 ,
+b11 -
+1"
+b0011 %
+#16800
+0"
+#17500
+1*
+1"
+#19500
+0*
+0"
+#22000
+b1000 &
+#24000
+1)
+1#
+1"
+b11 -
+#28000
+0)
+0#
+#31000
+0"
+#55000
+$finish
+`;
+
+        // ========================================================
+        // 2. ROBUST VCD PARSER (STANDARD IEEE 1364 COMPLIANT)
+        // ========================================================
+        function parseVCD(vcdContent) {
+            const lines = vcdContent.split(/\r?\n/);
+            const idToSig = {};
+            let inDefs = true;
+            const timeline = [];
+            let curTime = 0;
+            let curValues = {
+                disp: '01111111',
+                q: '0011',
+                door_state: '0',
+                over_weight_alert: '0',
+                over_weight: '0',
+                req_floor: '0000',
+                move_up_call: '0000',
+                move_down_call: '0000',
+                wire_current_floor: '00',
+                wire_direction: '11'
+            };
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+
+                if (inDefs) {
+                    if (line.startsWith('$var')) {
+                        const parts = line.split(/\s+/);
+                        if (parts.length >= 5) {
+                            const id = parts[3];
+                            let name = parts[4].toLowerCase();
+                            if (name.includes('[')) name = name.split('[')[0];
+                            idToSig[id] = name;
+                        }
+                    } else if (line.startsWith('$enddefinitions')) {
+                        inDefs = false;
+                    }
+                    continue;
+                }
+
+                if (line.startsWith('$dumpvars') || line.startsWith('$end')) continue;
+
+                if (line.startsWith('#')) {
+                    curTime = parseInt(line.substring(1));
+                    continue;
+                }
+
+                let val, id;
+                if (line.startsWith('b') || line.startsWith('B')) {
+                    const sp = line.indexOf(' ');
+                    if (sp !== -1) {
+                        val = line.substring(1, sp);
+                        id = line.substring(sp + 1).trim();
+                    }
+                } else if (line.length >= 2 && (line[0] === '0' || line[0] === '1' || line[0] === 'x' || line[0] === 'z')) {
+                    val = line[0];
+                    id = line.substring(1).trim();
+                }
+
+                if (id && idToSig[id]) {
+                    const rawName = idToSig[id];
+                    let mappedName = rawName;
+                    if (rawName.includes('disp')) mappedName = 'disp';
+                    else if (rawName.includes('door_state')) mappedName = 'door_state';
+                    else if (rawName.includes('over_weight_alert')) mappedName = 'over_weight_alert';
+                    else if (rawName === 'q') mappedName = 'q';
+                    else if (rawName.includes('current_floor')) mappedName = 'wire_current_floor';
+                    else if (rawName.includes('direction')) mappedName = 'wire_direction';
+                    else if (rawName.includes('req_floor')) mappedName = 'req_floor';
+                    else if (rawName.includes('move_up_call')) mappedName = 'move_up_call';
+                    else if (rawName.includes('move_down_call')) mappedName = 'move_down_call';
+                    else if (rawName === 'over_weight') mappedName = 'over_weight';
+
+                    curValues[mappedName] = val;
+
+                    if (timeline.length === 0 || timeline[timeline.length - 1].time !== curTime) {
+                        timeline.push({ time: curTime, values: { ...curValues } });
+                    } else {
+                        timeline[timeline.length - 1].values[mappedName] = val;
+                    }
+                }
+            }
+
+            return timeline;
+        }
+
+        // ========================================================
+        // 3. PLAYBACK ENGINE & INTERPOLATION
+        // ========================================================
+        let timeline = parseVCD(DEFAULT_VCD_DATA);
+        let maxSimTime = timeline[timeline.length - 1].time || 55000;
+        let currentSimTime = 0;
+        let isPlaying = true;
+        let playbackSpeed = 5; // default 5x real speed
+        let lastFrameTimestamp = performance.now();
+        let rotorDeg = 0;
+
+        const scrubber = document.getElementById('vcdScrubber');
+        scrubber.max = maxSimTime;
+        document.getElementById('txtMaxTime').textContent = maxSimTime.toLocaleString() + ' ms';
+
+        function getVCDStateAt(t) {
+            if (timeline.length === 0) return {};
+            let low = 0, high = timeline.length - 1, best = 0;
+            while (low <= high) {
+                const mid = Math.floor((low + high) / 2);
+                if (timeline[mid].time <= t) {
+                    best = mid;
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+            return timeline[best].values;
+        }
+
+        function renderVCDState(t) {
+            const state = getVCDStateAt(t);
+            if (!state) return;
+
+            // 1. Determine Floor (from disp or wire_current_floor)
+            let floor = 0;
+            const dispBin = (state.disp || '01111111').padStart(8, '0');
+            const dispHex = '0x' + parseInt(dispBin, 2).toString(16).toUpperCase().padStart(2, '0');
+            
+            if (dispHex === '0x7F' || state.wire_current_floor === '00' || state.wire_current_floor === '0') floor = 0;
+            else if (dispHex === '0x06' || state.wire_current_floor === '01' || state.wire_current_floor === '1') floor = 1;
+            else if (dispHex === '0x5B' || state.wire_current_floor === '10' || state.wire_current_floor === '2') floor = 2;
+            else if (dispHex === '0x4F' || state.wire_current_floor === '11' || state.wire_current_floor === '3') floor = 3;
+
+            // Cabin position
+            document.getElementById('cabin').style.bottom = `${floor * 25}%`;
+
+            // 2. Door state
+            const doorOpen = state.door_state === '1';
+            const cabinEl = document.getElementById('cabin');
+            if (doorOpen) cabinEl.classList.add('doors-open');
+            else cabinEl.classList.remove('doors-open');
+
+            const ledDoor = document.getElementById('ledDoor');
+            const txtDoor = document.getElementById('txtDoorState');
+            if (doorOpen) {
+                ledDoor.classList.add('on');
+                txtDoor.textContent = 'OPEN (1)';
+                txtDoor.style.color = 'var(--accent-emerald)';
+            } else {
+                ledDoor.classList.remove('on');
+                txtDoor.textContent = 'CLOSED (0)';
+                txtDoor.style.color = 'var(--text-main)';
+            }
+
+            // 3. Overweight Alert
+            const alertActive = state.over_weight_alert === '1';
+            const ledAlert = document.getElementById('ledAlert');
+            const txtAlert = document.getElementById('txtAlertState');
+            const hazard = document.getElementById('hazardBanner');
+            const cardOverweight = document.getElementById('cardOverweight');
+
+            if (alertActive) {
+                ledAlert.classList.add('on');
+                txtAlert.textContent = 'ALERT! (1)';
+                txtAlert.style.color = 'var(--accent-rose)';
+                hazard.style.display = 'flex';
+                cardOverweight.classList.add('active');
+            } else {
+                ledAlert.classList.remove('on');
+                txtAlert.textContent = 'NORMAL (0)';
+                txtAlert.style.color = 'var(--text-main)';
+                hazard.style.display = 'none';
+                cardOverweight.classList.remove('active');
+            }
+
+            const owVal = state.over_weight === '1';
+            document.getElementById('lblOverweightVal').textContent = owVal ? 'Input Wire: 1 (OVERLOADED)' : 'Input Wire: 0 (Normal)';
+            document.getElementById('valOverweightBit').textContent = owVal ? '1' : '0';
+            document.getElementById('valOverweightBit').style.color = owVal ? 'var(--accent-rose)' : 'var(--text-muted)';
+
+            // 4. 7-Segment Display
+            document.getElementById('hexDisp').textContent = dispHex;
+            document.getElementById('binDisp').textContent = dispBin;
+            document.getElementById('numDisp').textContent = floor;
+
+            const segLookup = {
+                '0x7F': ['a','b','c','d','e','f'],
+                '0x06': ['b','c'],
+                '0x5B': ['a','b','d','e','g'],
+                '0x4F': ['a','b','c','d','g']
+            };
+            const activeSegs = segLookup[dispHex] || [];
+            ['a','b','c','d','e','f','g','dp'].forEach(s => {
+                const el = document.getElementById('seg' + s.toUpperCase());
+                if (el) {
+                    if (activeSegs.includes(s)) el.classList.add('on');
+                    else el.classList.remove('on');
+                }
+            });
+
+            // 5. Stepper Motor
+            const qBin = (state.q || '0011').padStart(4, '0');
+            const qHex = '0x' + parseInt(qBin, 2).toString(16).toUpperCase();
+            document.getElementById('motorHex').textContent = qHex;
+            document.getElementById('motorBin').textContent = qBin;
+
+            const b3 = qBin[0] === '1';
+            const b2 = qBin[1] === '1';
+            const b1 = qBin[2] === '1';
+            const b0 = qBin[3] === '1';
+
+            document.getElementById('coilA').className = `coil coil-0 ${b3 ? 'on' : ''}`;
+            document.getElementById('coilB').className = `coil coil-1 ${b2 ? 'on' : ''}`;
+            document.getElementById('coilC').className = `coil coil-2 ${b1 ? 'on' : ''}`;
+            document.getElementById('coilD').className = `coil coil-3 ${b0 ? 'on' : ''}`;
+
+            document.getElementById('bit3').className = `coil-bit ${b3 ? 'on' : ''}`;
+            document.getElementById('bit2').className = `coil-bit ${b2 ? 'on' : ''}`;
+            document.getElementById('bit1').className = `coil-bit ${b1 ? 'on' : ''}`;
+            document.getElementById('bit0').className = `coil-bit ${b0 ? 'on' : ''}`;
+
+            const dirWire = state.wire_direction || '11';
+            if (dirWire === '01') {
+                rotorDeg += 15;
+                document.getElementById('motorAction').textContent = 'STEPPING UP (CW)';
+            } else if (dirWire === '10') {
+                rotorDeg -= 15;
+                document.getElementById('motorAction').textContent = 'STEPPING DOWN (CCW)';
+            } else {
+                document.getElementById('motorAction').textContent = 'HOLDING TORQUE';
+            }
+            document.getElementById('rotor').style.transform = `rotate(${rotorDeg}deg)`;
+
+            // 6. Cabin & Hall Inputs
+            const reqBin = (state.req_floor || '0000').padStart(4, '0');
+            for (let i = 0; i < 4; i++) {
+                const btn = document.getElementById('reqBtn' + i);
+                if (btn) {
+                    if (reqBin[3 - i] === '1') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            }
+
+            const upBin = (state.move_up_call || '0000').padStart(4, '0');
+            if (document.getElementById('callUp0')) document.getElementById('callUp0').className = `hall-btn ${upBin[3] === '1' ? 'active' : ''}`;
+            if (document.getElementById('callUp1')) document.getElementById('callUp1').className = `hall-btn ${upBin[2] === '1' ? 'active' : ''}`;
+            if (document.getElementById('callUp2')) document.getElementById('callUp2').className = `hall-btn ${upBin[1] === '1' ? 'active' : ''}`;
+
+            const downBin = (state.move_down_call || '0000').padStart(4, '0');
+            if (document.getElementById('callDown1')) document.getElementById('callDown1').className = `hall-btn ${downBin[2] === '1' ? 'active' : ''}`;
+            if (document.getElementById('callDown2')) document.getElementById('callDown2').className = `hall-btn ${downBin[1] === '1' ? 'active' : ''}`;
+            if (document.getElementById('callDown3')) document.getElementById('callDown3').className = `hall-btn ${downBin[0] === '1' ? 'active' : ''}`;
+
+            // 7. Bus Footer
+            document.getElementById('valCurFloor').textContent = floor;
+            document.getElementById('busCurFloor').textContent = `2'b${floor.toString(2).padStart(2, '0')}`;
+            document.getElementById('valMotionState').textContent = dirWire === '01' ? 'MOVING UP (01)' : dirWire === '10' ? 'MOVING DOWN (10)' : 'STOPPED (11)';
+            document.getElementById('busDir').textContent = dirWire === '01' ? 'UP (01)' : dirWire === '10' ? 'DOWN (10)' : 'STOP (11)';
+            document.getElementById('valDoorStateTxt').textContent = doorOpen ? 'OPEN (1)' : 'CLOSED (0)';
+            document.getElementById('busDoor').textContent = state.door_state || '0';
+            document.getElementById('busOverweight').textContent = state.over_weight || '0';
+            document.getElementById('busAlert').textContent = state.over_weight_alert || '0';
+            document.getElementById('busDisp').textContent = `${dispBin} (${dispHex})`;
+            document.getElementById('busQ').textContent = `${qBin} (${qHex})`;
+
+            // Slider & Time Label
+            scrubber.value = t;
+            document.getElementById('txtSimTime').textContent = Math.round(t).toLocaleString() + ' ms';
+        }
+
+        // Main Animation Loop
+        function animLoop(now) {
+            const dt = (now - lastFrameTimestamp);
+            lastFrameTimestamp = now;
+
+            if (isPlaying) {
+                currentSimTime += dt * playbackSpeed;
+                if (currentSimTime > maxSimTime) {
+                    currentSimTime = maxSimTime;
+                    isPlaying = false;
+                    document.getElementById('btnPlayPause').textContent = '▶';
+                    document.getElementById('btnPlayPause').classList.remove('active');
+                }
+            }
+
+            renderVCDState(currentSimTime);
+            requestAnimationFrame(animLoop);
+        }
+        requestAnimationFrame(animLoop);
+
+        // ========================================================
+        // 4. INTERACTIVE CONTROLS
+        // ========================================================
+        const btnPlay = document.getElementById('btnPlayPause');
+        btnPlay.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            btnPlay.textContent = isPlaying ? '⏸' : '▶';
+            btnPlay.classList.toggle('active', isPlaying);
+        });
+
+        document.getElementById('btnRestart').addEventListener('click', () => {
+            currentSimTime = 0;
+            renderVCDState(0);
+        });
+
+        document.getElementById('btnNextKey').addEventListener('click', () => {
+            const nextEvent = timeline.find(ev => ev.time > currentSimTime + 50);
+            if (nextEvent) {
+                currentSimTime = nextEvent.time;
+                renderVCDState(currentSimTime);
+            }
+        });
+
+        document.getElementById('btnPrevKey').addEventListener('click', () => {
+            for (let i = timeline.length - 1; i >= 0; i--) {
+                if (timeline[i].time < currentSimTime - 50) {
+                    currentSimTime = timeline[i].time;
+                    renderVCDState(currentSimTime);
+                    break;
+                }
+            }
+        });
+
+        scrubber.addEventListener('input', (e) => {
+            currentSimTime = parseFloat(e.target.value);
+            renderVCDState(currentSimTime);
+        });
+
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                playbackSpeed = parseFloat(btn.dataset.speed);
+            });
+        });
+
+        document.querySelectorAll('.jump-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                currentSimTime = parseFloat(chip.dataset.t);
+                renderVCDState(currentSimTime);
+            });
+        });
+
+        // ========================================================
+        // 5. CUSTOM VCD FILE UPLOAD & DRAG/DROP
+        // ========================================================
+        function loadNewVCD(content, filename) {
+            try {
+                const parsed = parseVCD(content);
+                if (parsed.length > 0) {
+                    timeline = parsed;
+                    maxSimTime = timeline[timeline.length - 1].time || 55000;
+                    scrubber.max = maxSimTime;
+                    document.getElementById('txtMaxTime').textContent = maxSimTime.toLocaleString() + ' ms';
+                    currentSimTime = 0;
+                    document.getElementById('vcdBadge').textContent = `VCD: ${filename}`;
+                    renderVCDState(0);
+                    alert(`Successfully loaded '${filename}' with ${timeline.length} time points!`);
+                } else {
+                    alert('Could not find valid time points in this VCD file.');
+                }
+            } catch (err) {
+                alert('Error parsing VCD: ' + err.message);
+            }
+        }
+
+        document.getElementById('vcdFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => loadNewVCD(ev.target.result, file.name);
+            reader.readAsText(file);
+        });
+
+        // Drag & Drop
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.getElementById('dropOverlay').classList.add('active');
+        });
+        document.getElementById('dropOverlay').addEventListener('dragleave', () => {
+            document.getElementById('dropOverlay').classList.remove('active');
+        });
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.getElementById('dropOverlay').classList.remove('active');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                const file = e.dataTransfer.files[0];
+                const reader = new FileReader();
+                reader.onload = (ev) => loadNewVCD(ev.target.result, file.name);
+                reader.readAsText(file);
+            }
+        });
+    </script>
+</body>
+</html>
